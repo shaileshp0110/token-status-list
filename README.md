@@ -97,3 +97,6 @@ This implementation follows the IETF draft specification for Token Status Lists,
 ## License
 
 This project is licensed under the terms of the [LICENSE](LICENSE) file in the root directory.
+
+[![PR Validation](https://github.com/shaileshp0110/token-status-list/actions/workflows/pr.yml/badge.svg)](https://github.com/shaileshp0110/token-status-list/actions/workflows/pr.yml)
+[![codecov](https://codecov.io/gh/shaileshp0110/token-status-list/branch/main/graph/badge.svg)](https://codecov.io/gh/shaileshp0110/token-status-list)
