@@ -93,7 +93,7 @@ impl StatusListEncoder {
             8 => Ok(statuses.iter().map(|status| *status as u8).collect()),
             1 | 2 | 4 => {
                 let statuses_per_byte = (8 / self.bits_per_status) as usize;
-                let num_bytes = (statuses.len() + statuses_per_byte - 1) / statuses_per_byte;
+                let num_bytes = statuses.len().div_ceil(statuses_per_byte);
                 let mut bytes = vec![0u8; num_bytes];
 
                 for (i, status) in statuses.iter().enumerate() {
