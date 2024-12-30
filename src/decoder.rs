@@ -1,4 +1,4 @@
-use crate::error::StatusTypeError;
+use crate::error::DecoderError;
 use crate::types::{StatusList, StatusType};
 use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine};
 use flate2::read::ZlibDecoder;
@@ -10,27 +10,18 @@ pub struct StatusListDecoder {
 }
 
 impl StatusListDecoder {
-    pub fn new(status_list: &StatusList) -> Result<Self, Box<dyn std::error::Error>> {
+    pub fn new(status_list: &StatusList) -> Result<Self, DecoderError> {
         //decode base64url (no padding)
         let compressed = URL_SAFE_NO_PAD
             .decode(&status_list.lst)
-            .map_err(|e| format!("Base64 decoding error: {}", e))?;
+            .map_err(|e| DecoderError::Base64Error(e.to_string()))?;
 
         //decompress ZLIB
         let mut decoder = ZlibDecoder::new(&compressed[..]);
         let mut raw_bytes = Vec::new();
         decoder
             .read_to_end(&mut raw_bytes)
-            .map_err(|e| format!("ZLIB decompression error: {}", e))?;
-
-        #[cfg(debug_assertions)]
-        println!(
-            "Decoded raw bytes: {:?}",
-            raw_bytes
-                .iter()
-                .map(|b| format!("{:08b}", b))
-                .collect::<Vec<_>>()
-        );
+            .map_err(|e| DecoderError::DecompressionError(e.to_string()))?;
 
         Ok(Self {
             raw_bytes,
@@ -38,46 +29,46 @@ impl StatusListDecoder {
         })
     }
 
-    pub fn get_status(&self, index: usize) -> Result<StatusType, StatusTypeError> {
+    pub fn get_status(&self, index: usize) -> Result<StatusType, DecoderError> {
         let statuses_per_byte = 8 / self.bits_per_status as usize;
         let byte_index = index / statuses_per_byte;
         let position_in_byte = index % statuses_per_byte;
 
         if byte_index >= self.raw_bytes.len() {
-            return Err(StatusTypeError::InvalidByteIndex(byte_index));
+            return Err(DecoderError::InvalidByteIndex(byte_index));
         }
 
         let byte = self.raw_bytes[byte_index];
 
         //8-bit encoding
         if self.bits_per_status == 8 {
-            return StatusType::try_from(byte);
-        }
-
-        // 1,2,4 bit encoding
-        let bit_shift = match self.bits_per_status {
-            1 => position_in_byte,
-            2 => match position_in_byte {
-                0 => 0,
-                1 => 2,
-                2 => 4,
-                3 => 6,
-                _ => unreachable!(),
-            },
-            4 => {
-                if position_in_byte == 0 {
-                    4
-                } else {
-                    0
+            StatusType::try_from(byte).map_err(|_| DecoderError::InvalidStatusType(byte))
+        } else {
+            // 1,2,4 bit encoding
+            let bit_shift = match self.bits_per_status {
+                1 => position_in_byte,
+                2 => match position_in_byte {
+                    0 => 0,
+                    1 => 2,
+                    2 => 4,
+                    3 => 6,
+                    _ => unreachable!(),
+                },
+                4 => {
+                    if position_in_byte == 0 {
+                        4
+                    } else {
+                        0
+                    }
                 }
-            }
-            _ => unreachable!(),
-        };
+                _ => unreachable!(),
+            };
 
-        let mask = (1u8 << self.bits_per_status) - 1;
-        let value = (byte >> bit_shift) & mask;
+            let mask = (1u8 << self.bits_per_status) - 1;
+            let value = (byte >> bit_shift) & mask;
 
-        StatusType::try_from(value)
+            StatusType::try_from(value).map_err(|_| DecoderError::InvalidStatusType(value))
+        }
     }
 
     pub fn get_raw_bytes(&self) -> &[u8] {
@@ -214,5 +205,94 @@ mod tests {
         assert_eq!(decoder.get_status(3)?, StatusType::ApplicationSpecific3);
 
         Ok(())
+    }
+
+    #[test]
+    fn test_decoder_base64_error() {
+        // Invalid base64 string
+        let status_list = StatusList {
+            bits: 2,
+            lst: "invalid base64!@#$".to_string(),
+            aggregation_uri: None,
+        };
+
+        match StatusListDecoder::new(&status_list) {
+            Err(DecoderError::Base64Error(_)) => (),
+            _ => panic!("Expected Base64Error"),
+        }
+    }
+
+    #[test]
+    fn test_decoder_decompression_error() {
+        // Valid base64 but invalid ZLIB data
+        let status_list = StatusList {
+            bits: 2,
+            lst: "SGVsbG8gV29ybGQh".to_string(), // "Hello World!" in base64
+            aggregation_uri: None,
+        };
+
+        match StatusListDecoder::new(&status_list) {
+            Err(DecoderError::DecompressionError(_)) => (),
+            _ => panic!("Expected DecompressionError"),
+        }
+    }
+
+    #[test]
+    fn test_decoder_invalid_byte_index() {
+        let mut builder = StatusListBuilder::new(2).unwrap();
+        builder.add_status(StatusType::Valid);
+        let status_list = builder.build().unwrap();
+        let decoder = StatusListDecoder::new(&status_list).unwrap();
+
+        // Try to access an index beyond the end of the data
+        match decoder.get_status(100) {
+            Err(DecoderError::InvalidByteIndex(_)) => (),
+            _ => panic!("Expected InvalidByteIndex error"),
+        }
+    }
+
+    #[test]
+    fn test_decoder_invalid_status_type() {
+        // Create a status list with invalid status values
+        let status_list = StatusList {
+            bits: 8,
+            lst: "eJzLBQAAdgB2".to_string(), // Compressed data with value 255
+            aggregation_uri: None,
+        };
+
+        if let Ok(decoder) = StatusListDecoder::new(&status_list) {
+            match decoder.get_status(0) {
+                Err(DecoderError::InvalidStatusType(_)) => (),
+                _ => panic!("Expected InvalidStatusType error"),
+            }
+        }
+    }
+
+    #[test]
+    fn test_decoder_error_display() {
+        let errors = [
+            DecoderError::Base64Error("invalid input".to_string()),
+            DecoderError::DecompressionError("invalid data".to_string()),
+            DecoderError::InvalidByteIndex(100),
+            DecoderError::InvalidStatusType(255),
+        ];
+
+        for error in errors {
+            let error_string = error.to_string();
+            match error {
+                DecoderError::Base64Error(_) => {
+                    assert!(error_string.contains("Base64 decoding error"));
+                }
+                DecoderError::DecompressionError(_) => {
+                    assert!(error_string.contains("ZLIB decompression error"));
+                }
+                DecoderError::InvalidByteIndex(_) => {
+                    assert!(error_string.contains("Invalid byte index"));
+                }
+                DecoderError::InvalidStatusType(_) => {
+                    assert!(error_string.contains("Invalid status type value"));
+                }
+            }
+        }
     }
 }

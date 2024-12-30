@@ -129,7 +129,7 @@ impl StatusListEncoder {
 mod tests {
     use super::*;
     use crate::decoder::StatusListDecoder;
-    use crate::error::{BuilderError, StatusTypeError};
+    use crate::error::BuilderError;
     use crate::types::StatusType;
 
     #[test]

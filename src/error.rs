@@ -58,3 +58,24 @@ impl fmt::Display for BuilderError {
 }
 
 impl Error for BuilderError {}
+
+#[derive(Debug)]
+pub enum DecoderError {
+    Base64Error(String),
+    DecompressionError(String),
+    InvalidByteIndex(usize),
+    InvalidStatusType(u8),
+}
+
+impl std::fmt::Display for DecoderError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            DecoderError::Base64Error(msg) => write!(f, "Base64 decoding error: {}", msg),
+            DecoderError::DecompressionError(msg) => write!(f, "ZLIB decompression error: {}", msg),
+            DecoderError::InvalidByteIndex(idx) => write!(f, "Invalid byte index: {}", idx),
+            DecoderError::InvalidStatusType(val) => write!(f, "Invalid status type value: {}", val),
+        }
+    }
+}
+
+impl std::error::Error for DecoderError {}
