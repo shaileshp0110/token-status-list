@@ -418,7 +418,7 @@ mod tests {
     fn test_encoder_invalid_bits_per_status() {
         let encoder = StatusListEncoder::new(3); // Invalid bits (not 1, 2, 4, or 8)
         let statuses = vec![StatusType::Valid];
-        
+
         match encoder.encode_statuses(&statuses) {
             Err(BuilderError::InvalidBitsPerStatus(bits)) => {
                 assert_eq!(bits, 3, "Expected InvalidBitsPerStatus(3)");
@@ -432,7 +432,7 @@ mod tests {
         let encoder = StatusListEncoder::new(2);
         let statuses = vec![StatusType::Valid];
         let bytes = encoder.encode_statuses(&statuses).unwrap();
-        
+
         // Test finalize error handling
         match encoder.finalize(&bytes) {
             Ok(_) => (), // Should work for valid data
