@@ -5,6 +5,7 @@ use std::io::Write;
 use crate::error::BuilderError;
 use crate::types::{StatusList, StatusType};
 
+#[derive(Debug)]
 pub struct StatusListEncoder {
     bits_per_status: u8,
 }
