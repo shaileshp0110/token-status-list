@@ -160,7 +160,7 @@ mod tests {
         assert_eq!(builder.last_index, Some(3));
         assert_eq!(builder.statuses.len(), 4);
     }
-    
+
     #[test]
     fn test_builder_invalid_bits_per_status() {
         let invalid_bits = [0, 3, 5, 6, 7, 9, 16];
@@ -170,7 +170,10 @@ mod tests {
                     assert_eq!(val, bits);
                     assert_eq!(
                         StatusTypeError::InvalidBitsPerStatus(val).to_string(),
-                        format!("Invalid bits per status value: {}. Must be 1, 2, 4, or 8", bits)
+                        format!(
+                            "Invalid bits per status value: {}. Must be 1, 2, 4, or 8",
+                            bits
+                        )
                     );
                 }
                 _ => panic!("Expected InvalidBitsPerStatus error for {}", bits),
