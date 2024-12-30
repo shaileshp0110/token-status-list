@@ -33,12 +33,18 @@ jobs:
       - name: Run tests
         run: cargo test --all-features
 
-  # Optional: Add coverage reporting
   coverage:
     name: Code coverage
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      
+      - name: Debug Info
+        run: |
+          echo "Repository: ${{ github.repository }}"
+          echo "Actor: ${{ github.actor }}"
+          echo "Ref: ${{ github.ref }}"
+          echo "Slug: shaileshp0110/token-status-list"
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -54,15 +60,13 @@ jobs:
       - name: Generate code coverage
         run: cargo llvm-cov --all-features --workspace --lcov --output-path lcov.info
 
+      - name: Debug Coverage File
+        run: ls -la lcov.info
+
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@v5.1.2
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
+          verbose: true
           files: lcov.info
           fail_ci_if_error: true
-          slug: ${{ github.repository }}
-      # - name: Upload coverage reports to Codecov
-      #   uses: codecov/codecov-action@v5
-      #   with:
-      #     token: ${{ secrets.CODECOV_TOKEN }}
-      #     slug: shaileshp0110/token-status-list    
