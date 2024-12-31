@@ -11,13 +11,8 @@ pub struct StatusListDecoder {
 
 impl StatusListDecoder {
     pub fn new(status_list: &StatusList) -> Result<Self, DecoderError> {
-        //decode base64url (no padding)
-        let compressed = URL_SAFE_NO_PAD
-            .decode(&status_list.lst)
-            .map_err(|e| DecoderError::Base64Error(e.to_string()))?;
-
-        //decompress ZLIB
-        let mut decoder = ZlibDecoder::new(&compressed[..]);
+        // Use raw bytes directly from lst
+        let mut decoder = ZlibDecoder::new(&status_list.lst[..]);
         let mut raw_bytes = Vec::new();
         decoder
             .read_to_end(&mut raw_bytes)
@@ -98,7 +93,7 @@ impl StatusListDecoder {
 
         Ok(Self {
             raw_bytes,
-            bits_per_status: 8, // You might need to pass this as a parameter or determine it from the data
+            bits_per_status: 8, // You might need to pass this as a parameter
         })
     }
 }
@@ -108,7 +103,6 @@ mod tests {
     use super::*;
     use crate::builder::StatusListBuilder;
     use serde_json::Value;
-
     #[test]
     fn test_decode_1bit_encoding() -> Result<(), Box<dyn std::error::Error>> {
         let mut builder = StatusListBuilder::new(1)?;
@@ -128,7 +122,6 @@ mod tests {
 
         Ok(())
     }
-
     #[test]
     fn test_decode_2bit_encoding() -> Result<(), Box<dyn std::error::Error>> {
         let mut builder = StatusListBuilder::new(2)?;
@@ -190,8 +183,8 @@ mod tests {
             .add_status(StatusType::ApplicationSpecific3);
 
         let status_list = builder.build()?;
-        let serialized = serde_json::to_string(&status_list)?;
-        let decoded: Value = serde_json::from_str(&serialized)?;
+        let json = status_list.to_json().unwrap();
+        let decoded: Value = serde_json::from_str(&json)?;
 
         // Get the base64 encoded string
         let base64_str = decoded["lst"].as_str().unwrap();
@@ -209,16 +202,25 @@ mod tests {
 
     #[test]
     fn test_decoder_base64_error() {
-        // Invalid base64 string
+        // Create an invalid status list with raw bytes
         let status_list = StatusList {
             bits: 2,
-            lst: "invalid base64!@#$".to_string(),
+            lst: vec![0xFF, 0xFF], // Invalid compressed data
             aggregation_uri: None,
         };
 
         match StatusListDecoder::new(&status_list) {
-            Err(DecoderError::Base64Error(_)) => (),
-            _ => panic!("Expected Base64Error"),
+            Err(DecoderError::DecompressionError(_)) => (),
+            _ => panic!("Expected DecompressionError"),
+        }
+    }
+
+    #[test]
+    fn test_decoder_base64_from_string() {
+        // Test the base64url decoder with invalid input
+        match StatusListDecoder::new_from_base64("invalid base64!@#$") {
+            Err(e) => assert!(e.to_string().contains("Base64 decoding error")),
+            _ => panic!("Expected Base64 decoding error"),
         }
     }
 
@@ -227,7 +229,7 @@ mod tests {
         // Valid base64 but invalid ZLIB data
         let status_list = StatusList {
             bits: 2,
-            lst: "SGVsbG8gV29ybGQh".to_string(), // "Hello World!" in base64
+            lst: "SGVsbG8gV29ybGQh".as_bytes().to_vec(), // "Hello World!" in base64
             aggregation_uri: None,
         };
 
@@ -256,7 +258,7 @@ mod tests {
         // Create a status list with invalid status values
         let status_list = StatusList {
             bits: 8,
-            lst: "eJzLBQAAdgB2".to_string(), // Compressed data with value 255
+            lst: "eJzLBQAAdgB2".as_bytes().to_vec(), // Compressed data with value 255
             aggregation_uri: None,
         };
 

@@ -91,9 +91,9 @@ mod error_handling_tests {
 fn test_serialization() -> Result<(), Box<dyn std::error::Error>> {
     let mut builder = StatusListBuilder::new(1)?;
     builder.add_status(StatusType::Valid);
-    let status_list = builder.build()?;
 
-    let serialized = serde_json::to_string(&status_list)?;
+    let status_list = builder.build()?;
+    let serialized = status_list.to_json().unwrap();
     let decoded: Value = serde_json::from_str(&serialized)?;
 
     // Verify the bits field exists in the JSON
@@ -107,8 +107,7 @@ fn test_json_serialization() -> Result<(), Box<dyn std::error::Error>> {
     let mut builder = StatusListBuilder::new(1)?;
     builder.add_status(StatusType::Valid);
     let status_list = builder.build()?;
-
-    let serialized = serde_json::to_string(&status_list)?;
+    let serialized = status_list.to_json().unwrap();
     let _: Value = serde_json::from_str(&serialized)?;
 
     Ok(())
@@ -119,8 +118,7 @@ fn test_json_serialization_2bit() -> Result<(), Box<dyn std::error::Error>> {
     let mut builder = StatusListBuilder::new(2)?;
     builder.add_status(StatusType::Valid);
     let status_list = builder.build()?;
-
-    let serialized = serde_json::to_string(&status_list)?;
+    let serialized = status_list.to_json().unwrap();
     let _: Value = serde_json::from_str(&serialized)?;
 
     Ok(())
@@ -234,7 +232,8 @@ fn test_complete_flow() -> Result<(), Box<dyn std::error::Error>> {
         }
 
         // Test serialization
-        let serialized = serde_json::to_string(&status_list)?;
+        let status_list = builder.build()?;
+        let serialized = status_list.to_json().unwrap();
         println!("Serialized: {}", serialized);
 
         // Test deserialization
