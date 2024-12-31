@@ -197,4 +197,33 @@ mod tests {
             "Invalid bits per status value: 3. Must be 1, 2, 4, or 8"
         );
     }
+    #[test]
+    fn test_spec_example() {
+        let statuses = vec![
+            StatusType::Invalid, // 1 - index 0
+            StatusType::Valid,   // 0 - index 1
+            StatusType::Valid,   // 0 - index 2
+            StatusType::Invalid, // 1 - index 3
+            StatusType::Invalid, // 1 - index 4
+            StatusType::Invalid, // 1 - index 5
+            StatusType::Valid,   // 0 - index 6
+            StatusType::Invalid, // 1 - index 7
+            StatusType::Invalid, // 1 - index 8
+            StatusType::Invalid, // 1 - index 9
+            StatusType::Valid,   // 0 - index 10
+            StatusType::Valid,   // 0 - index 11
+            StatusType::Valid,   // 0 - index 12
+            StatusType::Invalid, // 1 - index 13
+            StatusType::Valid,   // 0 - index 14
+            StatusType::Invalid, // 1 - index 15
+        ];
+        let builder = StatusListBuilder::from_vec(statuses, 1).unwrap();
+        let status_list = builder.build().unwrap();
+
+        let json = status_list.to_json().unwrap();
+        assert_eq!(json, r#"{"bits":1,"lst":"eNrbuRgAAhcBXQ"}"#);
+
+        let cbor = status_list.to_cbor().unwrap();
+        assert_eq!(cbor, "a2646269747301636c73744a78dadbb918000217015d");
+    }
 }

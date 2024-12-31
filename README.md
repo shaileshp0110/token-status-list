@@ -9,11 +9,12 @@ This library implements a compact and efficient way to manage token statuses usi
 - Support for different bit-size encodings (1, 2, 4, or 8 bits per status)
 - ZLIB compression of status lists
 - Support for standard status types:
-  - VALID (0x00)
-  - INVALID (0x01) 
-  - SUSPENDED (0x02)
-  - APPLICATION_SPECIFIC_3 (0x03)
-  - And more...
+- `Valid` (0x00)
+- `Invalid` (0x01)
+- `Suspended` (0x02)
+- `ApplicationSpecific3` (0x03)
+- `ApplicationSpecific14` (0x0E)
+- `ApplicationSpecific15` (0x0F)
 
 ## Usage
 
@@ -83,6 +84,25 @@ let serialized = serde_json::to_string(&status_list)?;
 // Deserialization
 let decoded: StatusList = serde_json::from_str(&serialized)?;
 let decoder = StatusListDecoder::new(&decoded)?;
+```
+
+```rust 
+// Create a new status list with 2 bits per status
+let mut builder = StatusListBuilder::new(2)?;
+// Add some statuses
+builder
+.add_status(StatusType::Valid)
+.add_status(StatusType::Invalid)
+.add_status(StatusType::Suspended);
+// Build the status list
+let status_list = builder.build()?;
+// Serialize to JSON
+let json = status_list.to_json()?;
+// Example output: {"bits":2,"lst":"eNpTAAEHAA"}
+// Serialize to CBOR
+let cbor = status_list.to_cbor()?;
+// Example output: "a2646269747302636c73744978da636100070"
+
 ```
 
 ## Specification Compliance

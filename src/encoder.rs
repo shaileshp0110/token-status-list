@@ -1,4 +1,3 @@
-use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine};
 use flate2::{write::ZlibEncoder, Compression};
 use std::io::Write;
 
@@ -116,11 +115,9 @@ impl StatusListEncoder {
             .finish()
             .map_err(|e| BuilderError::CompressionError(e.to_string()))?;
 
-        let encoded = URL_SAFE_NO_PAD.encode(compressed);
-
         Ok(StatusList {
             bits: self.bits_per_status,
-            lst: encoded,
+            lst: compressed,
             aggregation_uri: None,
         })
     }

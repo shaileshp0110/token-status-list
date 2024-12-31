@@ -5,9 +5,11 @@ edition = "2021"
 
 [dependencies]
 base64 = "0.22.1"
+base64url = "0.1.0"
 ciborium = "0.2.2"
 coset = { version = "0.3.8", features = ["std"] }
 flate2 = "1.0.34"
 hex = "0.4.3"
 serde = { version = "1.0.214", features = ["derive"] }
+serde_bytes = "0.11.15"
 serde_json = "1.0.132"
