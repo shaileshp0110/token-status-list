@@ -61,22 +61,27 @@ The status list uses a compact binary encoding format:
 
 ### Serialization and Deserialization
 
-The status list is serialized to JSON format with two main fields:
-
+The following example illustrates the JSON representation of the Status List:
+byte_array = [0xb9, 0xa3]
 ```json
 {
-    "bits": "8",
-    "lst": "eNpjYGRiBgAADgAH"
+    "bits": "1",
+    "lst": "eNrbuRgAAhcBXQ"
 }
 ```
-
+The status list is serialized to JSON format with two main fields
 Where:
 - `bits`: The number of bits used per status (1, 2, 4, or 8)
 - `lst`: The base64url-encoded, ZLIB-compressed status list
 
-Example of serialization/deserialization:
+The following example illustrates the CBOR representation of the Status List in Hex:
 
-```rust
+byte_array = [0xb9, 0xa3]
+```
+encoded:
+a2646269747301636c73744a78dadbb918000217015d
+```
+
 // Serialization
 let status_list = builder.build()?;
 let serialized = serde_json::to_string(&status_list)?;
@@ -113,6 +118,8 @@ This implementation follows the IETF draft specification for Token Status Lists,
 - ZLIB compression with DEFLATE
 - Standard status type values
 - JSON serialization format
+- CBOR serialization format
+
 
 ## License
 
