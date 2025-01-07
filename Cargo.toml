@@ -4,7 +4,6 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-base64 = "0.22.1"
 base64url = "0.1.0"
 ciborium = "0.2.2"
 coset = { version = "0.3.8", features = ["std"] }
