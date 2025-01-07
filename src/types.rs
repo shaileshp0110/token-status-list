@@ -137,10 +137,10 @@ mod tests {
         };
 
         // Test JSON serialization
-        assert!(invalid_status_list.to_json().is_ok()); // Should still work as it's just base64 encoding
+        assert!(invalid_status_list.to_json().is_ok());
 
         // Test CBOR serialization
-        assert!(invalid_status_list.to_cbor().is_ok()); // Should still work as it's just hex encoding
+        assert!(invalid_status_list.to_cbor().is_ok());
     }
 
     #[test]
@@ -158,9 +158,9 @@ mod tests {
 
         // Test CBOR format
         let cbor = status_list.to_cbor().unwrap();
-        assert!(cbor.starts_with("a2")); // map of 2 elements
-        assert!(cbor.contains("6462697473")); // "bits" key
-        assert!(cbor.contains("636c7374")); // "lst" key
+        assert!(cbor.starts_with("a2"));
+        assert!(cbor.contains("6462697473"));
+        assert!(cbor.contains("636c7374"));
     }
 
     #[test]

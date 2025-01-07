@@ -78,7 +78,6 @@ impl StatusListDecoder {
     }
 
     pub fn new_from_base64(base64_str: &str) -> Result<Self, Box<dyn std::error::Error>> {
-        // Use base64url decode instead
         let compressed =
             base64url::decode(base64_str).map_err(|e| format!("Base64 decoding error: {}", e))?;
 
@@ -90,7 +89,7 @@ impl StatusListDecoder {
 
         Ok(Self {
             raw_bytes,
-            bits_per_status: 8, // You might need to pass this as a parameter
+            bits_per_status: 8,
         })
     }
 }
