@@ -1,6 +1,5 @@
 use crate::error::DecoderError;
 use crate::types::{StatusList, StatusType};
-use base64url;
 use flate2::read::ZlibDecoder;
 use std::io::Read;
 
