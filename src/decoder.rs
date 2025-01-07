@@ -1,6 +1,6 @@
 use crate::error::DecoderError;
 use crate::types::{StatusList, StatusType};
-use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine};
+use base64url;
 use flate2::read::ZlibDecoder;
 use std::io::Read;
 
@@ -11,7 +11,6 @@ pub struct StatusListDecoder {
 
 impl StatusListDecoder {
     pub fn new(status_list: &StatusList) -> Result<Self, DecoderError> {
-        // Use raw bytes directly from lst
         let mut decoder = ZlibDecoder::new(&status_list.lst[..]);
         let mut raw_bytes = Vec::new();
         decoder
@@ -79,12 +78,10 @@ impl StatusListDecoder {
     }
 
     pub fn new_from_base64(base64_str: &str) -> Result<Self, Box<dyn std::error::Error>> {
-        // decode base64url (no padding)
-        let compressed = URL_SAFE_NO_PAD
-            .decode(base64_str)
-            .map_err(|e| format!("Base64 decoding error: {}", e))?;
+        // Use base64url decode instead
+        let compressed =
+            base64url::decode(base64_str).map_err(|e| format!("Base64 decoding error: {}", e))?;
 
-        //decompress ZLIB
         let mut decoder = ZlibDecoder::new(&compressed[..]);
         let mut raw_bytes = Vec::new();
         decoder
