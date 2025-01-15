@@ -33,11 +33,9 @@ impl StatusListDecoder {
 
         let byte = self.raw_bytes[byte_index];
 
-        //8-bit encoding
         if self.bits_per_status == 8 {
             StatusType::try_from(byte).map_err(|_| DecoderError::InvalidStatusType(byte))
         } else {
-            // 1,2,4 bit encoding
             let bit_shift = match self.bits_per_status {
                 1 => position_in_byte,
                 2 => match position_in_byte {
@@ -140,10 +138,10 @@ mod tests {
     fn test_decode_4bit_encoding() -> Result<(), Box<dyn std::error::Error>> {
         let mut builder = StatusListBuilder::new(4)?;
         builder
-            .add_status(StatusType::Valid) // 0
-            .add_status(StatusType::Invalid) // 1
-            .add_status(StatusType::Suspended) // 2
-            .add_status(StatusType::ApplicationSpecific15); // 15
+            .add_status(StatusType::Valid)
+            .add_status(StatusType::Invalid)
+            .add_status(StatusType::Suspended)
+            .add_status(StatusType::ApplicationSpecific15);
         let status_list = builder.build()?;
         let decoder = StatusListDecoder::new(&status_list)?;
         assert_eq!(decoder.get_status(0)?, StatusType::Valid);
@@ -156,10 +154,10 @@ mod tests {
     fn test_decode_8bit_encoding() -> Result<(), Box<dyn std::error::Error>> {
         let mut builder = StatusListBuilder::new(8)?;
         builder
-            .add_status(StatusType::Valid) // 0
-            .add_status(StatusType::Invalid) // 1
-            .add_status(StatusType::Suspended) // 2
-            .add_status(StatusType::ApplicationSpecific15); // 15
+            .add_status(StatusType::Valid)
+            .add_status(StatusType::Invalid)
+            .add_status(StatusType::Suspended)
+            .add_status(StatusType::ApplicationSpecific15);
         let status_list = builder.build()?;
         let decoder = StatusListDecoder::new(&status_list)?;
         assert_eq!(decoder.get_status(0)?, StatusType::Valid);
@@ -181,12 +179,10 @@ mod tests {
         let json = status_list.to_json().unwrap();
         let decoded: Value = serde_json::from_str(&json)?;
 
-        // Get the base64 encoded string
         let base64_str = decoded["lst"].as_str().unwrap();
 
         let decoder = StatusListDecoder::new_from_base64(base64_str)?;
 
-        // Verify the decoded values
         assert_eq!(decoder.get_status(0)?, StatusType::Valid);
         assert_eq!(decoder.get_status(1)?, StatusType::Invalid);
         assert_eq!(decoder.get_status(2)?, StatusType::Suspended);
@@ -197,10 +193,9 @@ mod tests {
 
     #[test]
     fn test_decoder_base64_error() {
-        // Create an invalid status list with raw bytes
         let status_list = StatusList {
             bits: 2,
-            lst: vec![0xFF, 0xFF], // Invalid compressed data
+            lst: vec![0xFF, 0xFF],
             aggregation_uri: None,
         };
 
@@ -212,7 +207,6 @@ mod tests {
 
     #[test]
     fn test_decoder_base64_from_string() {
-        // Test the base64url decoder with invalid input
         match StatusListDecoder::new_from_base64("invalid base64!@#$") {
             Err(e) => assert!(e.to_string().contains("Base64 decoding error")),
             _ => panic!("Expected Base64 decoding error"),
@@ -221,10 +215,9 @@ mod tests {
 
     #[test]
     fn test_decoder_decompression_error() {
-        // Valid base64 but invalid ZLIB data
         let status_list = StatusList {
             bits: 2,
-            lst: "SGVsbG8gV29ybGQh".as_bytes().to_vec(), // "Hello World!" in base64
+            lst: "SGVsbG8gV29ybGQh".as_bytes().to_vec(),
             aggregation_uri: None,
         };
 
@@ -241,7 +234,6 @@ mod tests {
         let status_list = builder.build().unwrap();
         let decoder = StatusListDecoder::new(&status_list).unwrap();
 
-        // Try to access an index beyond the end of the data
         match decoder.get_status(100) {
             Err(DecoderError::InvalidByteIndex(_)) => (),
             _ => panic!("Expected InvalidByteIndex error"),
@@ -250,10 +242,9 @@ mod tests {
 
     #[test]
     fn test_decoder_invalid_status_type() {
-        // Create a status list with invalid status values
         let status_list = StatusList {
             bits: 8,
-            lst: "eJzLBQAAdgB2".as_bytes().to_vec(), // Compressed data with value 255
+            lst: "eJzLBQAAdgB2".as_bytes().to_vec(),
             aggregation_uri: None,
         };
 
