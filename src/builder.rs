@@ -29,7 +29,7 @@ impl StatusListBuilder {
         BitsPerStatus::try_from(bits_per_status)?;
 
         let last_index = if !statuses.is_empty() {
-            Some(statuses.len() - 1) // For 12 statuses, this will be 11
+            Some(statuses.len() - 1)
         } else {
             None
         };
@@ -87,7 +87,6 @@ mod tests {
 
         let builder = StatusListBuilder::from_vec(statuses.clone(), bits_per_status).unwrap();
 
-        // Assert
         assert_eq!(builder.bits_per_status, bits_per_status);
         assert_eq!(builder.statuses, statuses);
         assert_eq!(builder.last_index, Some(11));
@@ -101,7 +100,7 @@ mod tests {
             StatusType::Suspended,
             StatusType::ApplicationSpecific3,
         ];
-        let invalid_bits = 3; // Only 1, 2, 4, or 8 are valid
+        let invalid_bits = 3;
 
         assert!(StatusListBuilder::from_vec(statuses, invalid_bits).is_err());
     }
@@ -109,40 +108,32 @@ mod tests {
     #[test]
     fn test_different_bit_sizes() {
         let one_bit_statuses = vec![
-            StatusType::Valid,   // 0
-            StatusType::Invalid, // 1
-            StatusType::Valid,   // 0
-            StatusType::Invalid, // 1
-            StatusType::Valid,   // 0
-            StatusType::Invalid, // 1
-            StatusType::Valid,   // 0
-            StatusType::Invalid, // 1
+            StatusType::Valid,
+            StatusType::Invalid,
+            StatusType::Valid,
+            StatusType::Invalid,
+            StatusType::Valid,
+            StatusType::Invalid,
+            StatusType::Valid,
+            StatusType::Invalid,
         ];
         let builder = StatusListBuilder::from_vec(one_bit_statuses.clone(), 1).unwrap();
         assert_eq!(builder.last_index, Some(7));
 
-        // 2-bit status test
         let two_bit_statuses = vec![
-            StatusType::Valid,                // 00
-            StatusType::Invalid,              // 01
-            StatusType::Suspended,            // 10
-            StatusType::ApplicationSpecific3, // 11
+            StatusType::Valid,
+            StatusType::Invalid,
+            StatusType::Suspended,
+            StatusType::ApplicationSpecific3,
         ];
         let builder = StatusListBuilder::from_vec(two_bit_statuses.clone(), 2).unwrap();
         assert_eq!(builder.last_index, Some(3));
 
-        // 4-bit status test
-        let four_bit_statuses = vec![
-            StatusType::Valid,   // 0000
-            StatusType::Invalid, // 0001
-        ];
+        let four_bit_statuses = vec![StatusType::Valid, StatusType::Invalid];
         let builder = StatusListBuilder::from_vec(four_bit_statuses.clone(), 4).unwrap();
         assert_eq!(builder.last_index, Some(1));
 
-        // 8-bit status test
-        let eight_bit_statuses = vec![
-            StatusType::Valid, // Full byte
-        ];
+        let eight_bit_statuses = vec![StatusType::Valid];
         let builder = StatusListBuilder::from_vec(eight_bit_statuses.clone(), 8).unwrap();
         assert_eq!(builder.last_index, Some(0));
     }
@@ -152,10 +143,10 @@ mod tests {
         let mut builder = StatusListBuilder::new(2).unwrap();
 
         builder
-            .add_status(StatusType::Valid) // index 0
-            .add_status(StatusType::Invalid) // index 1
-            .add_status(StatusType::Suspended) // index 2
-            .add_status(StatusType::ApplicationSpecific3); // index 3
+            .add_status(StatusType::Valid)
+            .add_status(StatusType::Invalid)
+            .add_status(StatusType::Suspended)
+            .add_status(StatusType::ApplicationSpecific3);
 
         assert_eq!(builder.last_index, Some(3));
         assert_eq!(builder.statuses.len(), 4);
@@ -183,14 +174,12 @@ mod tests {
 
     #[test]
     fn test_status_type_error_messages() {
-        // Test InvalidBitsPerStatus message
         let error = StatusListBuilder::new(3).unwrap_err();
         assert_eq!(
             error.to_string(),
             "Invalid bits per status value: 3. Must be 1, 2, 4, or 8"
         );
 
-        // Test from_vec with invalid bits
         let error = StatusListBuilder::from_vec(vec![StatusType::Valid], 3).unwrap_err();
         assert_eq!(
             error.to_string(),
@@ -200,22 +189,22 @@ mod tests {
     #[test]
     fn test_spec_example() {
         let statuses = vec![
-            StatusType::Invalid, // 1 - index 0
-            StatusType::Valid,   // 0 - index 1
-            StatusType::Valid,   // 0 - index 2
-            StatusType::Invalid, // 1 - index 3
-            StatusType::Invalid, // 1 - index 4
-            StatusType::Invalid, // 1 - index 5
-            StatusType::Valid,   // 0 - index 6
-            StatusType::Invalid, // 1 - index 7
-            StatusType::Invalid, // 1 - index 8
-            StatusType::Invalid, // 1 - index 9
-            StatusType::Valid,   // 0 - index 10
-            StatusType::Valid,   // 0 - index 11
-            StatusType::Valid,   // 0 - index 12
-            StatusType::Invalid, // 1 - index 13
-            StatusType::Valid,   // 0 - index 14
-            StatusType::Invalid, // 1 - index 15
+            StatusType::Invalid,
+            StatusType::Valid,
+            StatusType::Valid,
+            StatusType::Invalid,
+            StatusType::Invalid,
+            StatusType::Invalid,
+            StatusType::Valid,
+            StatusType::Invalid,
+            StatusType::Invalid,
+            StatusType::Invalid,
+            StatusType::Valid,
+            StatusType::Valid,
+            StatusType::Valid,
+            StatusType::Invalid,
+            StatusType::Valid,
+            StatusType::Invalid,
         ];
         let builder = StatusListBuilder::from_vec(statuses, 1).unwrap();
         let status_list = builder.build().unwrap();

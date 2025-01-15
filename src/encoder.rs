@@ -46,7 +46,6 @@ impl StatusListEncoder {
 
         let status_value = status as u8;
 
-        // Calculate bit positions
         let bit_shift = match self.bits_per_status {
             1 => {
                 // 8 values per byte, right to left
@@ -74,11 +73,9 @@ impl StatusListEncoder {
             _ => unreachable!(),
         };
 
-        // Clear the target bits first
         let mask = !(((1u8 << self.bits_per_status) - 1) << bit_shift);
         bytes[byte_index] &= mask;
 
-        // Set the new bits
         bytes[byte_index] |= status_value << bit_shift;
 
         #[cfg(debug_assertions)]
@@ -134,10 +131,10 @@ mod tests {
     fn test_direct_encoding() -> Result<(), BuilderError> {
         let encoder = StatusListEncoder::new(2);
         let statuses = vec![
-            StatusType::Valid,                // 00
-            StatusType::Invalid,              // 01
-            StatusType::Suspended,            // 10
-            StatusType::ApplicationSpecific3, // 11
+            StatusType::Valid,
+            StatusType::Invalid,
+            StatusType::Suspended,
+            StatusType::ApplicationSpecific3,
         ];
 
         let bytes = encoder.encode_statuses(&statuses)?;
@@ -161,17 +158,10 @@ mod tests {
     #[test]
     fn test_different_bit_sizes() -> Result<(), BuilderError> {
         let test_cases = [
-            // 1-bit encoding: right to left
-            // Valid(0), Invalid(1) -> 0b00000010
             (1, vec![StatusType::Valid, StatusType::Invalid], 0b00000010),
-            // 2-bit encoding: right to left in pairs
-            // Valid(00), Invalid(01) -> 0b00000100
             (2, vec![StatusType::Valid, StatusType::Invalid], 0b00000100),
-            // 4-bit encoding: low nibble, high nibble
-            // Valid(0000) at low nibble, Invalid(0001) at high nibble -> 0b00000001
             (4, vec![StatusType::Valid, StatusType::Invalid], 0b00000001),
-            // 8-bit encoding: full bytes
-            (8, vec![StatusType::Valid, StatusType::Invalid], 0b00000000), // first byte only
+            (8, vec![StatusType::Valid, StatusType::Invalid], 0b00000000),
         ];
 
         for (bits, statuses, expected_byte) in test_cases {
@@ -191,35 +181,30 @@ mod tests {
     fn test_spec_1bit_example() -> Result<(), BuilderError> {
         let encoder = StatusListEncoder::new(1);
         let statuses = vec![
-            StatusType::Invalid, // 1 - index 0
-            StatusType::Valid,   // 0 - index 1
-            StatusType::Valid,   // 0 - index 2
-            StatusType::Invalid, // 1 - index 3
-            StatusType::Invalid, // 1 - index 4
-            StatusType::Invalid, // 1 - index 5
-            StatusType::Valid,   // 0 - index 6
-            StatusType::Invalid, // 1 - index 7
-            StatusType::Invalid, // 1 - index 8
-            StatusType::Invalid, // 1 - index 9
-            StatusType::Valid,   // 0 - index 10
-            StatusType::Valid,   // 0 - index 11
-            StatusType::Valid,   // 0 - index 12
-            StatusType::Invalid, // 1 - index 13
-            StatusType::Valid,   // 0 - index 14
-            StatusType::Invalid, // 1 - index 15
+            StatusType::Invalid, // 1
+            StatusType::Valid,   // 0
+            StatusType::Valid,   // 0
+            StatusType::Invalid, // 1
+            StatusType::Invalid, // 1
+            StatusType::Invalid, // 1
+            StatusType::Valid,   // 0
+            StatusType::Invalid, // 1
+            StatusType::Invalid, // 1
+            StatusType::Invalid, // 1
+            StatusType::Valid,   // 0
+            StatusType::Valid,   // 0
+            StatusType::Valid,   // 0
+            StatusType::Invalid, // 1
+            StatusType::Valid,   // 0
+            StatusType::Invalid, // 1
         ];
 
         let bytes = encoder.encode_statuses(&statuses)?;
 
-        // First byte: 10111001 = 0xB9
-        // Indices:     7654 3210
         assert_eq!(bytes[0], 0xB9);
 
-        // Second byte: 10100011 = 0xA3
-        // Indices:    15141312 11109 8
         assert_eq!(bytes[1], 0xA3);
 
-        // Verify we can decode it back
         let status_list = encoder.finalize(&bytes)?;
         let decoder = StatusListDecoder::new(&status_list).unwrap();
         assert_eq!(decoder.get_status(0).unwrap(), StatusType::Invalid);
@@ -246,19 +231,18 @@ mod tests {
     fn test_spec_8bit_example() -> Result<(), BuilderError> {
         let encoder = StatusListEncoder::new(8);
         let statuses = vec![
-            StatusType::Invalid,              // 0x01 - index 0
-            StatusType::Suspended,            // 0x02 - index 1
-            StatusType::Valid,                // 0x00 - index 2
-            StatusType::ApplicationSpecific3, // 0x03 - index 3
-            StatusType::Valid,                // 0x00 - index 4
-            StatusType::Invalid,              // 0x01 - index 5
-            StatusType::Suspended,            // 0x02 - index 6
-            StatusType::ApplicationSpecific3, // 0x03 - index 7
+            StatusType::Invalid,
+            StatusType::Suspended,
+            StatusType::Valid,
+            StatusType::ApplicationSpecific3,
+            StatusType::Valid,
+            StatusType::Invalid,
+            StatusType::Suspended,
+            StatusType::ApplicationSpecific3,
         ];
 
         let bytes = encoder.encode_statuses(&statuses)?;
 
-        // Each status takes a full byte
         assert_eq!(bytes[0], 0x01); // Invalid
         assert_eq!(bytes[1], 0x02); // Suspended
         assert_eq!(bytes[2], 0x00); // Valid
@@ -292,24 +276,24 @@ mod tests {
     fn test_full_2bit_pattern() -> Result<(), BuilderError> {
         let encoder = StatusListEncoder::new(2);
         let statuses = vec![
-            StatusType::Invalid,              // 01
-            StatusType::Suspended,            // 10
-            StatusType::Valid,                // 00
-            StatusType::ApplicationSpecific3, // 11
-            StatusType::Valid,                // 00
-            StatusType::Invalid,              // 01
-            StatusType::Valid,                // 00
-            StatusType::Invalid,              // 01
-            StatusType::Invalid,              // 01
-            StatusType::Suspended,            // 10
-            StatusType::ApplicationSpecific3, // 11
-            StatusType::ApplicationSpecific3, // 11
+            StatusType::Invalid,
+            StatusType::Suspended,
+            StatusType::Valid,
+            StatusType::ApplicationSpecific3,
+            StatusType::Valid,
+            StatusType::Invalid,
+            StatusType::Valid,
+            StatusType::Invalid,
+            StatusType::Invalid,
+            StatusType::Suspended,
+            StatusType::ApplicationSpecific3,
+            StatusType::ApplicationSpecific3,
         ];
 
         let bytes = encoder.encode_statuses(&statuses)?;
-        assert_eq!(bytes[0], 0xC9); // 11001001
-        assert_eq!(bytes[1], 0x44); // 01000100
-        assert_eq!(bytes[2], 0xF9); // 11111001
+        assert_eq!(bytes[0], 0xC9);
+        assert_eq!(bytes[1], 0x44);
+        assert_eq!(bytes[2], 0xF9);
 
         Ok(())
     }
@@ -318,28 +302,27 @@ mod tests {
     fn test_full_4bit_pattern() -> Result<(), BuilderError> {
         let encoder = StatusListEncoder::new(4);
         let statuses = vec![
-            StatusType::Invalid,              // 01
-            StatusType::Suspended,            // 10
-            StatusType::Valid,                // 00
-            StatusType::ApplicationSpecific3, // 11
-            StatusType::Valid,                // 00
-            StatusType::Invalid,              // 01
-            StatusType::Valid,                // 00
-            StatusType::Invalid,              // 01
-            StatusType::Invalid,              // 01
-            StatusType::Suspended,            // 10
-            StatusType::ApplicationSpecific3, // 11
-            StatusType::ApplicationSpecific3, // 11
+            StatusType::Invalid,
+            StatusType::Suspended,
+            StatusType::Valid,
+            StatusType::ApplicationSpecific3,
+            StatusType::Valid,
+            StatusType::Invalid,
+            StatusType::Valid,
+            StatusType::Invalid,
+            StatusType::Invalid,
+            StatusType::Suspended,
+            StatusType::ApplicationSpecific3,
+            StatusType::ApplicationSpecific3,
         ];
 
         let bytes = encoder.encode_statuses(&statuses)?;
-        // The test expects: [0x12, 0x03, 0x01, 0x01, 0x12, 0x33]
-        assert_eq!(bytes[0], 0x12); //0001 0010
-        assert_eq!(bytes[1], 0x03); //0000 0011
-        assert_eq!(bytes[2], 0x01); //0000 0001
-        assert_eq!(bytes[3], 0x01); //0000 0001
-        assert_eq!(bytes[4], 0x12); //0001 0010
-        assert_eq!(bytes[5], 0x33); //0011 0011
+        assert_eq!(bytes[0], 0x12);
+        assert_eq!(bytes[1], 0x03);
+        assert_eq!(bytes[2], 0x01);
+        assert_eq!(bytes[3], 0x01);
+        assert_eq!(bytes[4], 0x12);
+        assert_eq!(bytes[5], 0x33);
 
         Ok(())
     }
@@ -348,14 +331,14 @@ mod tests {
     fn test_byte_boundaries() -> Result<(), BuilderError> {
         let encoder = StatusListEncoder::new(2);
         let statuses = vec![
-            StatusType::Valid,                // 00 | First byte
-            StatusType::Invalid,              // 01 |
-            StatusType::Suspended,            // 10 |
-            StatusType::ApplicationSpecific3, // 11 |
-            StatusType::Valid,                // 00 | Second byte
-            StatusType::Invalid,              // 01 |
-            StatusType::Suspended,            // 10 |
-            StatusType::ApplicationSpecific3, // 11 |
+            StatusType::Valid,
+            StatusType::Invalid,
+            StatusType::Suspended,
+            StatusType::ApplicationSpecific3,
+            StatusType::Valid,
+            StatusType::Invalid,
+            StatusType::Suspended,
+            StatusType::ApplicationSpecific3,
         ];
 
         let bytes = encoder.encode_statuses(&statuses)?;
@@ -388,19 +371,14 @@ mod tests {
     fn test_partial_byte() -> Result<(), BuilderError> {
         let encoder = StatusListEncoder::new(2);
         let statuses = vec![
-            StatusType::Valid,     // 00 (bits 0-1)
-            StatusType::Invalid,   // 01 (bits 2-3)
-            StatusType::Suspended, // 10 (bits 4-5)
+            StatusType::Valid,
+            StatusType::Invalid,
+            StatusType::Suspended,
         ];
 
         let bytes = encoder.encode_statuses(&statuses)?;
 
-        // Expected byte pattern:
-        // bits 0-1: 00 (Valid)
-        // bits 2-3: 01 (Invalid)
-        // bits 4-5: 10 (Suspended)
-        // bits 6-7: 00 (unused)
-        assert_eq!(bytes[0], 0b00100100); // 0x24 or decimal 36
+        assert_eq!(bytes[0], 0b00100100);
 
         let status_list = encoder.finalize(&bytes)?;
         let decoder = StatusListDecoder::new(&status_list).unwrap();
@@ -414,7 +392,7 @@ mod tests {
 
     #[test]
     fn test_encoder_invalid_bits_per_status() {
-        let encoder = StatusListEncoder::new(3); // Invalid bits (not 1, 2, 4, or 8)
+        let encoder = StatusListEncoder::new(3);
         let statuses = vec![StatusType::Valid];
 
         match encoder.encode_statuses(&statuses) {
@@ -431,9 +409,8 @@ mod tests {
         let statuses = vec![StatusType::Valid];
         let bytes = encoder.encode_statuses(&statuses).unwrap();
 
-        // Test finalize error handling
         match encoder.finalize(&bytes) {
-            Ok(_) => (), // Should work for valid data
+            Ok(_) => (),
             Err(BuilderError::CompressionError(_)) => (),
             Err(e) => panic!("Unexpected error: {:?}", e),
         }

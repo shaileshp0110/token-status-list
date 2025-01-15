@@ -129,17 +129,14 @@ mod tests {
     use super::*;
     #[test]
     fn test_serialization_errors() {
-        // Create an invalid status list
         let invalid_status_list = StatusList {
             bits: 1,
-            lst: vec![0xFF, 0xFF], // Invalid compressed data
+            lst: vec![0xFF, 0xFF],
             aggregation_uri: None,
         };
 
-        // Test JSON serialization
         assert!(invalid_status_list.to_json().is_ok());
 
-        // Test CBOR serialization
         assert!(invalid_status_list.to_cbor().is_ok());
     }
 
@@ -151,12 +148,10 @@ mod tests {
             aggregation_uri: None,
         };
 
-        // Test JSON format
         let json = status_list.to_json().unwrap();
         assert!(json.contains("\"bits\":1"));
         assert!(json.contains("\"lst\":"));
 
-        // Test CBOR format
         let cbor = status_list.to_cbor().unwrap();
         assert!(cbor.starts_with("a2"));
         assert!(cbor.contains("6462697473"));
