@@ -29,7 +29,7 @@ mod encoding_tests {
 
     #[test]
     fn test_8bit_encoding() -> Result<(), Box<dyn std::error::Error>> {
-        let mut builder = StatusListBuilder::new(8)?;
+        let builder = StatusListBuilder::new(8)?;
         builder
             .add_status(StatusType::Valid)
             .add_status(StatusType::Invalid);
@@ -50,7 +50,7 @@ mod spec_compliance_tests {
 
     #[test]
     fn test_spec_example() -> Result<(), Box<dyn std::error::Error>> {
-        let mut builder = StatusListBuilder::new(2)?;
+        let builder = StatusListBuilder::new(2)?;
 
         // Example from the spec using 2-bit encoding
         builder
@@ -77,7 +77,7 @@ mod error_handling_tests {
 
     #[test]
     fn test_invalid_index() -> Result<(), Box<dyn std::error::Error>> {
-        let mut builder = StatusListBuilder::new(2)?;
+        let builder = StatusListBuilder::new(2)?;
         builder.add_status(StatusType::Valid);
         let status_list = builder.build()?;
         let decoder = StatusListDecoder::new(&status_list)?;
@@ -89,7 +89,7 @@ mod error_handling_tests {
 
 #[test]
 fn test_serialization() -> Result<(), Box<dyn std::error::Error>> {
-    let mut builder = StatusListBuilder::new(1)?;
+    let builder = StatusListBuilder::new(1)?;
     builder.add_status(StatusType::Valid);
 
     let status_list = builder.build()?;
@@ -104,7 +104,7 @@ fn test_serialization() -> Result<(), Box<dyn std::error::Error>> {
 
 #[test]
 fn test_json_serialization() -> Result<(), Box<dyn std::error::Error>> {
-    let mut builder = StatusListBuilder::new(1)?;
+    let builder = StatusListBuilder::new(1)?;
     builder.add_status(StatusType::Valid);
     let status_list = builder.build()?;
     let serialized = status_list.to_json().unwrap();
@@ -115,7 +115,7 @@ fn test_json_serialization() -> Result<(), Box<dyn std::error::Error>> {
 
 #[test]
 fn test_json_serialization_2bit() -> Result<(), Box<dyn std::error::Error>> {
-    let mut builder = StatusListBuilder::new(2)?;
+    let builder = StatusListBuilder::new(2)?;
     builder.add_status(StatusType::Valid);
     let status_list = builder.build()?;
     let serialized = status_list.to_json().unwrap();
@@ -214,7 +214,7 @@ fn test_complete_flow() -> Result<(), Box<dyn std::error::Error>> {
         println!("\nTesting {}-bit encoding:", bits_per_status);
 
         // Build the status list
-        let mut builder = StatusListBuilder::new(bits_per_status)?;
+        let builder = StatusListBuilder::new(bits_per_status)?;
         for status in &statuses {
             builder.add_status(*status);
         }

@@ -98,7 +98,7 @@ mod tests {
     use serde_json::Value;
     #[test]
     fn test_decode_1bit_encoding() -> Result<(), Box<dyn std::error::Error>> {
-        let mut builder = StatusListBuilder::new(1)?;
+        let builder = StatusListBuilder::new(1)?;
         builder
             .add_status(StatusType::Valid)
             .add_status(StatusType::Invalid)
@@ -117,7 +117,7 @@ mod tests {
     }
     #[test]
     fn test_decode_2bit_encoding() -> Result<(), Box<dyn std::error::Error>> {
-        let mut builder = StatusListBuilder::new(2)?;
+        let builder = StatusListBuilder::new(2)?;
         builder
             .add_status(StatusType::Valid)
             .add_status(StatusType::Invalid)
@@ -136,7 +136,7 @@ mod tests {
     }
     #[test]
     fn test_decode_4bit_encoding() -> Result<(), Box<dyn std::error::Error>> {
-        let mut builder = StatusListBuilder::new(4)?;
+        let builder = StatusListBuilder::new(4)?;
         builder
             .add_status(StatusType::Valid)
             .add_status(StatusType::Invalid)
@@ -152,7 +152,7 @@ mod tests {
     }
     #[test]
     fn test_decode_8bit_encoding() -> Result<(), Box<dyn std::error::Error>> {
-        let mut builder = StatusListBuilder::new(8)?;
+        let builder = StatusListBuilder::new(8)?;
         builder
             .add_status(StatusType::Valid)
             .add_status(StatusType::Invalid)
@@ -168,7 +168,7 @@ mod tests {
     }
     #[test]
     fn test_base64_decoding() -> Result<(), Box<dyn std::error::Error>> {
-        let mut builder = StatusListBuilder::new(8)?;
+        let builder = StatusListBuilder::new(8)?;
         builder
             .add_status(StatusType::Valid)
             .add_status(StatusType::Invalid)
@@ -229,7 +229,7 @@ mod tests {
 
     #[test]
     fn test_decoder_invalid_byte_index() {
-        let mut builder = StatusListBuilder::new(2).unwrap();
+        let builder = StatusListBuilder::new(2).unwrap();
         builder.add_status(StatusType::Valid);
         let status_list = builder.build().unwrap();
         let decoder = StatusListDecoder::new(&status_list).unwrap();

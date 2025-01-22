@@ -1,12 +1,15 @@
+use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::Mutex;
+
 use crate::encoder::StatusListEncoder;
 use crate::error::{BuilderError, StatusTypeError};
 use crate::types::{BitsPerStatus, StatusList, StatusType};
 
 #[derive(Debug)]
 pub struct StatusListBuilder {
-    statuses: Vec<StatusType>,
+    statuses: Mutex<Vec<StatusType>>,
     bits_per_status: u8,
-    last_index: Option<usize>,
+    last_index: AtomicUsize,
     encoder: StatusListEncoder,
 }
 
@@ -15,9 +18,9 @@ impl StatusListBuilder {
         BitsPerStatus::try_from(bits_per_status)?;
 
         Ok(Self {
-            statuses: Vec::new(),
+            statuses: Mutex::new(Vec::new()),
             bits_per_status,
-            last_index: None,
+            last_index: AtomicUsize::new(0),
             encoder: StatusListEncoder::new(bits_per_status),
         })
     }
@@ -29,35 +32,44 @@ impl StatusListBuilder {
         BitsPerStatus::try_from(bits_per_status)?;
 
         let last_index = if !statuses.is_empty() {
-            Some(statuses.len() - 1)
+            statuses.len() - 1
         } else {
-            None
+            0
         };
 
         Ok(Self {
-            statuses,
+            statuses: Mutex::new(statuses),
             bits_per_status,
-            last_index,
+            last_index: AtomicUsize::new(last_index),
             encoder: StatusListEncoder::new(bits_per_status),
         })
     }
 
-    pub fn add_status(&mut self, status: StatusType) -> &mut Self {
-        let index = self.statuses.len();
+    pub fn add_status(&self, status: StatusType) -> &Self {
+        let mut statuses = self.statuses.lock().unwrap();
+        let index = statuses.len();
 
-        self.statuses.push(status);
-        self.last_index = Some(index);
+        statuses.push(status);
+        self.last_index.store(index, Ordering::SeqCst);
         self
     }
 
     pub fn get_last_index(&self) -> Option<usize> {
-        self.last_index
+        let index = self.last_index.load(Ordering::SeqCst);
+        if index == 0 && self.statuses.lock().unwrap().is_empty() {
+            None
+        } else {
+            Some(index)
+        }
     }
+
     pub fn get_bits_per_status(&self) -> u8 {
         self.bits_per_status
     }
+
     pub fn build(&self) -> Result<StatusList, BuilderError> {
-        let bytes = self.encoder.encode_statuses(&self.statuses)?;
+        let statuses = self.statuses.lock().unwrap();
+        let bytes = self.encoder.encode_statuses(&statuses)?;
         self.encoder.finalize(&bytes)
     }
 }
@@ -65,7 +77,30 @@ impl StatusListBuilder {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::error::StatusTypeError;
+    use std::thread;
+
+    #[test]
+    fn test_thread_safety() {
+        let builder = StatusListBuilder::new(2).unwrap();
+        let builder_arc = std::sync::Arc::new(builder);
+        let mut handles = vec![];
+
+        for _ in 0..10 {
+            let builder_clone = builder_arc.clone();
+            let handle = thread::spawn(move || {
+                builder_clone.add_status(StatusType::Valid);
+                builder_clone.add_status(StatusType::Invalid);
+            });
+            handles.push(handle);
+        }
+
+        for handle in handles {
+            handle.join().unwrap();
+        }
+
+        let statuses = builder_arc.statuses.lock().unwrap();
+        assert_eq!(statuses.len(), 20); // 10 threads * 2 statuses each
+    }
 
     #[test]
     fn test_from_vec_constructor() {
@@ -88,8 +123,8 @@ mod tests {
         let builder = StatusListBuilder::from_vec(statuses.clone(), bits_per_status).unwrap();
 
         assert_eq!(builder.bits_per_status, bits_per_status);
-        assert_eq!(builder.statuses, statuses);
-        assert_eq!(builder.last_index, Some(11));
+        assert_eq!(*builder.statuses.lock().unwrap(), statuses);
+        assert_eq!(builder.last_index.load(Ordering::SeqCst), 11);
     }
 
     #[test]
@@ -118,7 +153,7 @@ mod tests {
             StatusType::Invalid,
         ];
         let builder = StatusListBuilder::from_vec(one_bit_statuses.clone(), 1).unwrap();
-        assert_eq!(builder.last_index, Some(7));
+        assert_eq!(builder.last_index.load(Ordering::SeqCst), 7);
 
         let two_bit_statuses = vec![
             StatusType::Valid,
@@ -127,29 +162,28 @@ mod tests {
             StatusType::ApplicationSpecific3,
         ];
         let builder = StatusListBuilder::from_vec(two_bit_statuses.clone(), 2).unwrap();
-        assert_eq!(builder.last_index, Some(3));
+        assert_eq!(builder.last_index.load(Ordering::SeqCst), 3);
 
         let four_bit_statuses = vec![StatusType::Valid, StatusType::Invalid];
         let builder = StatusListBuilder::from_vec(four_bit_statuses.clone(), 4).unwrap();
-        assert_eq!(builder.last_index, Some(1));
+        assert_eq!(builder.last_index.load(Ordering::SeqCst), 1);
 
         let eight_bit_statuses = vec![StatusType::Valid];
         let builder = StatusListBuilder::from_vec(eight_bit_statuses.clone(), 8).unwrap();
-        assert_eq!(builder.last_index, Some(0));
+        assert_eq!(builder.last_index.load(Ordering::SeqCst), 0);
     }
 
     #[test]
     fn test_add_status() {
-        let mut builder = StatusListBuilder::new(2).unwrap();
+        let builder = StatusListBuilder::new(2).unwrap();
 
-        builder
-            .add_status(StatusType::Valid)
-            .add_status(StatusType::Invalid)
-            .add_status(StatusType::Suspended)
-            .add_status(StatusType::ApplicationSpecific3);
+        builder.add_status(StatusType::Valid);
+        builder.add_status(StatusType::Invalid);
+        builder.add_status(StatusType::Suspended);
+        builder.add_status(StatusType::ApplicationSpecific3);
 
-        assert_eq!(builder.last_index, Some(3));
-        assert_eq!(builder.statuses.len(), 4);
+        assert_eq!(builder.last_index.load(Ordering::SeqCst), 3);
+        assert_eq!(builder.statuses.lock().unwrap().len(), 4);
     }
 
     #[test]
