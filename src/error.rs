@@ -65,6 +65,8 @@ pub enum DecoderError {
     DecompressionError(String),
     InvalidByteIndex(usize),
     InvalidStatusType(u8),
+    StatusListCreationError(String),
+    SerializationError(String),
 }
 
 impl std::fmt::Display for DecoderError {
@@ -74,8 +76,12 @@ impl std::fmt::Display for DecoderError {
             DecoderError::DecompressionError(msg) => write!(f, "ZLIB decompression error: {}", msg),
             DecoderError::InvalidByteIndex(idx) => write!(f, "Invalid byte index: {}", idx),
             DecoderError::InvalidStatusType(val) => write!(f, "Invalid status type value: {}", val),
+            DecoderError::StatusListCreationError(msg) => {
+                write!(f, "Status list creation error: {}", msg)
+            }
+            DecoderError::SerializationError(msg) => write!(f, "Serialization error: {}", msg),
         }
     }
 }
 
-impl std::error::Error for DecoderError {}
+impl Error for DecoderError {}

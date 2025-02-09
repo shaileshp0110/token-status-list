@@ -1,3 +1,4 @@
+use crate::error::DecoderError;
 use crate::{builder::StatusListBuilder, decoder::StatusListDecoder, types::StatusType};
 use serde_json::Value;
 
@@ -6,11 +7,15 @@ mod builder_tests {
     use super::*;
 
     #[test]
-    fn test_new_status_list() -> Result<(), Box<dyn std::error::Error>> {
-        StatusListBuilder::new(1)?;
-        StatusListBuilder::new(2)?;
-        StatusListBuilder::new(4)?;
-        StatusListBuilder::new(8)?;
+    fn test_new_status_list() -> Result<(), DecoderError> {
+        StatusListBuilder::new(1)
+            .map_err(|e| DecoderError::StatusListCreationError(e.to_string()))?;
+        StatusListBuilder::new(2)
+            .map_err(|e| DecoderError::StatusListCreationError(e.to_string()))?;
+        StatusListBuilder::new(4)
+            .map_err(|e| DecoderError::StatusListCreationError(e.to_string()))?;
+        StatusListBuilder::new(8)
+            .map_err(|e| DecoderError::StatusListCreationError(e.to_string()))?;
         Ok(())
     }
 
@@ -28,13 +33,16 @@ mod encoding_tests {
     use super::*;
 
     #[test]
-    fn test_8bit_encoding() -> Result<(), Box<dyn std::error::Error>> {
-        let builder = StatusListBuilder::new(8)?;
+    fn test_8bit_encoding() -> Result<(), DecoderError> {
+        let builder = StatusListBuilder::new(8)
+            .map_err(|e| DecoderError::StatusListCreationError(e.to_string()))?;
         builder
             .add_status(StatusType::Valid)
             .add_status(StatusType::Invalid);
 
-        let status_list = builder.build()?;
+        let status_list = builder
+            .build()
+            .map_err(|e| DecoderError::StatusListCreationError(e.to_string()))?;
         let decoder = StatusListDecoder::new(&status_list)?;
 
         assert_eq!(decoder.get_status(0)?, StatusType::Valid);
@@ -49,8 +57,9 @@ mod spec_compliance_tests {
     use super::*;
 
     #[test]
-    fn test_spec_example() -> Result<(), Box<dyn std::error::Error>> {
-        let builder = StatusListBuilder::new(2)?;
+    fn test_spec_example() -> Result<(), DecoderError> {
+        let builder = StatusListBuilder::new(2)
+            .map_err(|e| DecoderError::StatusListCreationError(e.to_string()))?;
 
         // Example from the spec using 2-bit encoding
         builder
@@ -59,7 +68,9 @@ mod spec_compliance_tests {
             .add_status(StatusType::Valid)
             .add_status(StatusType::ApplicationSpecific3);
 
-        let status_list = builder.build()?;
+        let status_list = builder
+            .build()
+            .map_err(|e| DecoderError::StatusListCreationError(e.to_string()))?;
         let decoder = StatusListDecoder::new(&status_list)?;
 
         assert_eq!(decoder.get_status(0)?, StatusType::Invalid);
@@ -76,10 +87,13 @@ mod error_handling_tests {
     use super::*;
 
     #[test]
-    fn test_invalid_index() -> Result<(), Box<dyn std::error::Error>> {
-        let builder = StatusListBuilder::new(2)?;
+    fn test_invalid_index() -> Result<(), DecoderError> {
+        let builder = StatusListBuilder::new(2)
+            .map_err(|e| DecoderError::StatusListCreationError(e.to_string()))?;
         builder.add_status(StatusType::Valid);
-        let status_list = builder.build()?;
+        let status_list = builder
+            .build()
+            .map_err(|e| DecoderError::StatusListCreationError(e.to_string()))?;
         let decoder = StatusListDecoder::new(&status_list)?;
 
         assert!(decoder.get_status(100).is_err());
@@ -88,13 +102,19 @@ mod error_handling_tests {
 }
 
 #[test]
-fn test_serialization() -> Result<(), Box<dyn std::error::Error>> {
-    let builder = StatusListBuilder::new(1)?;
+fn test_serialization() -> Result<(), DecoderError> {
+    let builder = StatusListBuilder::new(1)
+        .map_err(|e| DecoderError::StatusListCreationError(e.to_string()))?;
     builder.add_status(StatusType::Valid);
 
-    let status_list = builder.build()?;
-    let serialized = status_list.to_json().unwrap();
-    let decoded: Value = serde_json::from_str(&serialized)?;
+    let status_list = builder
+        .build()
+        .map_err(|e| DecoderError::StatusListCreationError(e.to_string()))?;
+    let serialized = status_list
+        .to_json()
+        .map_err(|e| DecoderError::SerializationError(e.to_string()))?;
+    let decoded: Value = serde_json::from_str(&serialized)
+        .map_err(|e| DecoderError::SerializationError(e.to_string()))?;
 
     // Verify the bits field exists in the JSON
     assert!(decoded.get("bits").is_some());
@@ -103,29 +123,41 @@ fn test_serialization() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 #[test]
-fn test_json_serialization() -> Result<(), Box<dyn std::error::Error>> {
-    let builder = StatusListBuilder::new(1)?;
+fn test_json_serialization() -> Result<(), DecoderError> {
+    let builder = StatusListBuilder::new(1)
+        .map_err(|e| DecoderError::StatusListCreationError(e.to_string()))?;
     builder.add_status(StatusType::Valid);
-    let status_list = builder.build()?;
-    let serialized = status_list.to_json().unwrap();
-    let _: Value = serde_json::from_str(&serialized)?;
+    let status_list = builder
+        .build()
+        .map_err(|e| DecoderError::StatusListCreationError(e.to_string()))?;
+    let serialized = status_list
+        .to_json()
+        .map_err(|e| DecoderError::SerializationError(e.to_string()))?;
+    let _: Value = serde_json::from_str(&serialized)
+        .map_err(|e| DecoderError::SerializationError(e.to_string()))?;
 
     Ok(())
 }
 
 #[test]
-fn test_json_serialization_2bit() -> Result<(), Box<dyn std::error::Error>> {
-    let builder = StatusListBuilder::new(2)?;
+fn test_json_serialization_2bit() -> Result<(), DecoderError> {
+    let builder = StatusListBuilder::new(2)
+        .map_err(|e| DecoderError::StatusListCreationError(e.to_string()))?;
     builder.add_status(StatusType::Valid);
-    let status_list = builder.build()?;
-    let serialized = status_list.to_json().unwrap();
-    let _: Value = serde_json::from_str(&serialized)?;
+    let status_list = builder
+        .build()
+        .map_err(|e| DecoderError::StatusListCreationError(e.to_string()))?;
+    let serialized = status_list
+        .to_json()
+        .map_err(|e| DecoderError::SerializationError(e.to_string()))?;
+    let _: Value = serde_json::from_str(&serialized)
+        .map_err(|e| DecoderError::SerializationError(e.to_string()))?;
 
     Ok(())
 }
 
 #[test]
-fn test_complete_flow() -> Result<(), Box<dyn std::error::Error>> {
+fn test_complete_flow() -> Result<(), DecoderError> {
     // Test cases for each bit size
     let test_cases = [
         (
@@ -214,11 +246,14 @@ fn test_complete_flow() -> Result<(), Box<dyn std::error::Error>> {
         println!("\nTesting {}-bit encoding:", bits_per_status);
 
         // Build the status list
-        let builder = StatusListBuilder::new(bits_per_status)?;
+        let builder = StatusListBuilder::new(bits_per_status)
+            .map_err(|e| DecoderError::StatusListCreationError(e.to_string()))?;
         for status in &statuses {
             builder.add_status(*status);
         }
-        let status_list = builder.build()?;
+        let status_list = builder
+            .build()
+            .map_err(|e| DecoderError::StatusListCreationError(e.to_string()))?;
 
         // Test encoding
         println!("Original statuses: {:?}", statuses);
@@ -232,14 +267,20 @@ fn test_complete_flow() -> Result<(), Box<dyn std::error::Error>> {
         }
 
         // Test serialization
-        let status_list = builder.build()?;
-        let serialized = status_list.to_json().unwrap();
+        let status_list = builder
+            .build()
+            .map_err(|e| DecoderError::StatusListCreationError(e.to_string()))?;
+        let serialized = status_list
+            .to_json()
+            .map_err(|e| DecoderError::SerializationError(e.to_string()))?;
         println!("Serialized: {}", serialized);
 
         // Test deserialization
-        let decoded: Value = serde_json::from_str(&serialized)?;
+        let decoded: Value = serde_json::from_str(&serialized)
+            .map_err(|e| DecoderError::SerializationError(e.to_string()))?;
         assert!(decoded.get("bits").is_some());
         println!("Decoded lst: {:?}", decoded.get("lst").unwrap());
+
         // Verify bits field matches
         if let Some(bits) = decoded.get("bits").and_then(|v| v.as_str()) {
             println!("Bits field: {}", bits);
