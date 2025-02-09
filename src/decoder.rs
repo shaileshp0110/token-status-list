@@ -286,6 +286,8 @@ mod tests {
             DecoderError::DecompressionError("invalid data".to_string()),
             DecoderError::InvalidByteIndex(100),
             DecoderError::InvalidStatusType(255),
+            DecoderError::StatusListCreationError("invalid status list".to_string()),
+            DecoderError::SerializationError("invalid serialization".to_string()),
         ];
 
         for error in errors {
