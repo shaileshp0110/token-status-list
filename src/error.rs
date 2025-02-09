@@ -65,6 +65,8 @@ pub enum DecoderError {
     DecompressionError(String),
     InvalidByteIndex(usize),
     InvalidStatusType(u8),
+    StatusListCreationError(String),
+    SerializationError(String),
 }
 
 impl std::fmt::Display for DecoderError {
@@ -74,8 +76,71 @@ impl std::fmt::Display for DecoderError {
             DecoderError::DecompressionError(msg) => write!(f, "ZLIB decompression error: {}", msg),
             DecoderError::InvalidByteIndex(idx) => write!(f, "Invalid byte index: {}", idx),
             DecoderError::InvalidStatusType(val) => write!(f, "Invalid status type value: {}", val),
+            DecoderError::StatusListCreationError(msg) => {
+                write!(f, "Status list creation error: {}", msg)
+            }
+            DecoderError::SerializationError(msg) => write!(f, "Serialization error: {}", msg),
         }
     }
 }
 
-impl std::error::Error for DecoderError {}
+impl Error for DecoderError {}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_status_list_creation_error_display() {
+        let error = DecoderError::StatusListCreationError("invalid bits per status".to_string());
+        assert_eq!(
+            error.to_string(),
+            "Status list creation error: invalid bits per status"
+        );
+    }
+
+    #[test]
+    fn test_serialization_error_display() {
+        let error = DecoderError::SerializationError("failed to serialize JSON".to_string());
+        assert_eq!(
+            error.to_string(),
+            "Serialization error: failed to serialize JSON"
+        );
+    }
+
+    #[test]
+    fn test_all_decoder_error_variants() {
+        let errors = [
+            DecoderError::Base64Error("invalid base64".to_string()),
+            DecoderError::DecompressionError("failed to decompress".to_string()),
+            DecoderError::InvalidByteIndex(42),
+            DecoderError::InvalidStatusType(255),
+            DecoderError::StatusListCreationError("invalid creation".to_string()),
+            DecoderError::SerializationError("invalid json".to_string()),
+        ];
+
+        for error in errors {
+            let error_string = error.to_string();
+            match error {
+                DecoderError::Base64Error(_) => {
+                    assert!(error_string.contains("Base64 decoding error"));
+                }
+                DecoderError::DecompressionError(_) => {
+                    assert!(error_string.contains("ZLIB decompression error"));
+                }
+                DecoderError::InvalidByteIndex(_) => {
+                    assert!(error_string.contains("Invalid byte index"));
+                }
+                DecoderError::InvalidStatusType(_) => {
+                    assert!(error_string.contains("Invalid status type value"));
+                }
+                DecoderError::StatusListCreationError(_) => {
+                    assert!(error_string.contains("Status list creation error"));
+                }
+                DecoderError::SerializationError(_) => {
+                    assert!(error_string.contains("Serialization error"));
+                }
+            }
+        }
+    }
+}

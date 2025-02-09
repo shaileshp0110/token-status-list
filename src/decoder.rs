@@ -74,15 +74,15 @@ impl StatusListDecoder {
         self.raw_bytes.is_empty()
     }
 
-    pub fn new_from_base64(base64_str: &str) -> Result<Self, Box<dyn std::error::Error>> {
+    pub fn new_from_base64(base64_str: &str) -> Result<Self, DecoderError> {
         let compressed =
-            base64url::decode(base64_str).map_err(|e| format!("Base64 decoding error: {}", e))?;
+            base64url::decode(base64_str).map_err(|e| DecoderError::Base64Error(e.to_string()))?;
 
         let mut decoder = ZlibDecoder::new(&compressed[..]);
         let mut raw_bytes = Vec::new();
         decoder
             .read_to_end(&mut raw_bytes)
-            .map_err(|e| format!("ZLIB decompression error: {}", e))?;
+            .map_err(|e| DecoderError::DecompressionError(e.to_string()))?;
 
         Ok(Self {
             raw_bytes,
@@ -96,16 +96,20 @@ mod tests {
     use super::*;
     use crate::builder::StatusListBuilder;
     use serde_json::Value;
+
     #[test]
-    fn test_decode_1bit_encoding() -> Result<(), Box<dyn std::error::Error>> {
-        let builder = StatusListBuilder::new(1)?;
+    fn test_decode_1bit_encoding() -> Result<(), DecoderError> {
+        let builder = StatusListBuilder::new(1)
+            .map_err(|e| DecoderError::StatusListCreationError(e.to_string()))?;
         builder
             .add_status(StatusType::Valid)
             .add_status(StatusType::Invalid)
             .add_status(StatusType::Valid)
             .add_status(StatusType::Invalid);
 
-        let status_list = builder.build()?;
+        let status_list = builder
+            .build()
+            .map_err(|e| DecoderError::StatusListCreationError(e.to_string()))?;
         let decoder = StatusListDecoder::new(&status_list)?;
 
         assert_eq!(decoder.get_status(0)?, StatusType::Valid);
@@ -115,16 +119,20 @@ mod tests {
 
         Ok(())
     }
+
     #[test]
-    fn test_decode_2bit_encoding() -> Result<(), Box<dyn std::error::Error>> {
-        let builder = StatusListBuilder::new(2)?;
+    fn test_decode_2bit_encoding() -> Result<(), DecoderError> {
+        let builder = StatusListBuilder::new(2)
+            .map_err(|e| DecoderError::StatusListCreationError(e.to_string()))?;
         builder
             .add_status(StatusType::Valid)
             .add_status(StatusType::Invalid)
             .add_status(StatusType::Suspended)
             .add_status(StatusType::ApplicationSpecific3);
 
-        let status_list = builder.build()?;
+        let status_list = builder
+            .build()
+            .map_err(|e| DecoderError::StatusListCreationError(e.to_string()))?;
         let decoder = StatusListDecoder::new(&status_list)?;
 
         assert_eq!(decoder.get_status(0)?, StatusType::Valid);
@@ -134,15 +142,19 @@ mod tests {
 
         Ok(())
     }
+
     #[test]
-    fn test_decode_4bit_encoding() -> Result<(), Box<dyn std::error::Error>> {
-        let builder = StatusListBuilder::new(4)?;
+    fn test_decode_4bit_encoding() -> Result<(), DecoderError> {
+        let builder = StatusListBuilder::new(4)
+            .map_err(|e| DecoderError::StatusListCreationError(e.to_string()))?;
         builder
             .add_status(StatusType::Valid)
             .add_status(StatusType::Invalid)
             .add_status(StatusType::Suspended)
             .add_status(StatusType::ApplicationSpecific15);
-        let status_list = builder.build()?;
+        let status_list = builder
+            .build()
+            .map_err(|e| DecoderError::StatusListCreationError(e.to_string()))?;
         let decoder = StatusListDecoder::new(&status_list)?;
         assert_eq!(decoder.get_status(0)?, StatusType::Valid);
         assert_eq!(decoder.get_status(2)?, StatusType::Suspended);
@@ -150,15 +162,19 @@ mod tests {
 
         Ok(())
     }
+
     #[test]
-    fn test_decode_8bit_encoding() -> Result<(), Box<dyn std::error::Error>> {
-        let builder = StatusListBuilder::new(8)?;
+    fn test_decode_8bit_encoding() -> Result<(), DecoderError> {
+        let builder = StatusListBuilder::new(8)
+            .map_err(|e| DecoderError::StatusListCreationError(e.to_string()))?;
         builder
             .add_status(StatusType::Valid)
             .add_status(StatusType::Invalid)
             .add_status(StatusType::Suspended)
             .add_status(StatusType::ApplicationSpecific15);
-        let status_list = builder.build()?;
+        let status_list = builder
+            .build()
+            .map_err(|e| DecoderError::StatusListCreationError(e.to_string()))?;
         let decoder = StatusListDecoder::new(&status_list)?;
         assert_eq!(decoder.get_status(0)?, StatusType::Valid);
         assert_eq!(decoder.get_status(2)?, StatusType::Suspended);
@@ -166,18 +182,25 @@ mod tests {
 
         Ok(())
     }
+
     #[test]
-    fn test_base64_decoding() -> Result<(), Box<dyn std::error::Error>> {
-        let builder = StatusListBuilder::new(8)?;
+    fn test_base64_decoding() -> Result<(), DecoderError> {
+        let builder = StatusListBuilder::new(8)
+            .map_err(|e| DecoderError::StatusListCreationError(e.to_string()))?;
         builder
             .add_status(StatusType::Valid)
             .add_status(StatusType::Invalid)
             .add_status(StatusType::Suspended)
             .add_status(StatusType::ApplicationSpecific3);
 
-        let status_list = builder.build()?;
-        let json = status_list.to_json().unwrap();
-        let decoded: Value = serde_json::from_str(&json)?;
+        let status_list = builder
+            .build()
+            .map_err(|e| DecoderError::StatusListCreationError(e.to_string()))?;
+        let json = status_list
+            .to_json()
+            .map_err(|e| DecoderError::SerializationError(e.to_string()))?;
+        let decoded: Value = serde_json::from_str(&json)
+            .map_err(|e| DecoderError::SerializationError(e.to_string()))?;
 
         let base64_str = decoded["lst"].as_str().unwrap();
 
@@ -263,6 +286,8 @@ mod tests {
             DecoderError::DecompressionError("invalid data".to_string()),
             DecoderError::InvalidByteIndex(100),
             DecoderError::InvalidStatusType(255),
+            DecoderError::StatusListCreationError("invalid status list".to_string()),
+            DecoderError::SerializationError("invalid serialization".to_string()),
         ];
 
         for error in errors {
@@ -279,6 +304,12 @@ mod tests {
                 }
                 DecoderError::InvalidStatusType(_) => {
                     assert!(error_string.contains("Invalid status type value"));
+                }
+                DecoderError::StatusListCreationError(_) => {
+                    assert!(error_string.contains("Status list creation error"));
+                }
+                DecoderError::SerializationError(_) => {
+                    assert!(error_string.contains("Serialization error"));
                 }
             }
         }
