@@ -7,6 +7,9 @@ pub enum StatusType {
     Invalid = 0x01,
     Suspended = 0x02,
     ApplicationSpecific3 = 0x03,
+    ApplicationSpecific11 = 0x0B,
+    ApplicationSpecific12 = 0x0C,
+    ApplicationSpecific13 = 0x0D,
     ApplicationSpecific14 = 0x0E,
     ApplicationSpecific15 = 0x0F,
 }
@@ -42,6 +45,9 @@ impl TryFrom<u8> for StatusType {
             0x01 => Ok(StatusType::Invalid),
             0x02 => Ok(StatusType::Suspended),
             0x03 => Ok(StatusType::ApplicationSpecific3),
+            0x0B => Ok(StatusType::ApplicationSpecific11),
+            0x0C => Ok(StatusType::ApplicationSpecific12),
+            0x0D => Ok(StatusType::ApplicationSpecific13),
             0x0E => Ok(StatusType::ApplicationSpecific14),
             0x0F => Ok(StatusType::ApplicationSpecific15),
             _ => Err(StatusTypeError::UndefinedStatusType(value)),
@@ -171,5 +177,54 @@ mod tests {
             cbor_error.to_string(),
             "CBOR serialization error: test error"
         );
+    }
+
+    #[test]
+    fn test_application_specific_status_types() {
+        // Test all application-specific status types as per draft-13
+        assert_eq!(
+            StatusType::try_from(0x03).unwrap(),
+            StatusType::ApplicationSpecific3
+        );
+        assert_eq!(
+            StatusType::try_from(0x0B).unwrap(),
+            StatusType::ApplicationSpecific11
+        );
+        assert_eq!(
+            StatusType::try_from(0x0C).unwrap(),
+            StatusType::ApplicationSpecific12
+        );
+        assert_eq!(
+            StatusType::try_from(0x0D).unwrap(),
+            StatusType::ApplicationSpecific13
+        );
+        assert_eq!(
+            StatusType::try_from(0x0E).unwrap(),
+            StatusType::ApplicationSpecific14
+        );
+        assert_eq!(
+            StatusType::try_from(0x0F).unwrap(),
+            StatusType::ApplicationSpecific15
+        );
+    }
+
+    #[test]
+    fn test_all_standard_status_types() {
+        // Test standard status types as per draft-13
+        assert_eq!(StatusType::try_from(0x00).unwrap(), StatusType::Valid);
+        assert_eq!(StatusType::try_from(0x01).unwrap(), StatusType::Invalid);
+        assert_eq!(StatusType::try_from(0x02).unwrap(), StatusType::Suspended);
+    }
+
+    #[test]
+    fn test_reserved_status_types_error() {
+        // Values 0x04-0x0A are reserved for future registration
+        for value in 0x04..=0x0A {
+            assert!(StatusType::try_from(value).is_err());
+        }
+
+        // Value 0x10 and above are also invalid
+        assert!(StatusType::try_from(0x10).is_err());
+        assert!(StatusType::try_from(0xFF).is_err());
     }
 }
