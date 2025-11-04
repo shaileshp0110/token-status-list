@@ -1,6 +1,6 @@
 # Token Status List
 
-A Rust implementation of the [Token Status List specification](https://datatracker.ietf.org/doc/html/draft-ietf-oauth-status-list-06), which defines a mechanism for representing the status of tokens secured by JSON Object Signing and Encryption (JOSE) or CBOR Object Signing and Encryption (COSE).
+A Rust implementation of the [Token Status List specification](https://datatracker.ietf.org/doc/html/draft-ietf-oauth-status-list-13), which defines a mechanism for representing the status of tokens secured by JSON Object Signing and Encryption (JOSE) or CBOR Object Signing and Encryption (COSE).
 
 ## Overview
 
@@ -9,12 +9,16 @@ This library implements a compact and efficient way to manage token statuses usi
 - Support for different bit-size encodings (1, 2, 4, or 8 bits per status)
 - ZLIB compression of status lists
 - Support for standard status types:
-- `Valid` (0x00)
-- `Invalid` (0x01)
-- `Suspended` (0x02)
-- `ApplicationSpecific3` (0x03)
-- `ApplicationSpecific14` (0x0E)
-- `ApplicationSpecific15` (0x0F)
+  - `Valid` (0x00)
+  - `Invalid` (0x01)
+  - `Suspended` (0x02)
+- Support for application-specific status types:
+  - `ApplicationSpecific3` (0x03)
+  - `ApplicationSpecific11` (0x0B)
+  - `ApplicationSpecific12` (0x0C)
+  - `ApplicationSpecific13` (0x0D)
+  - `ApplicationSpecific14` (0x0E)
+  - `ApplicationSpecific15` (0x0F)
 
 ## Usage
 
@@ -112,12 +116,13 @@ let cbor = status_list.to_cbor()?;
 
 ## Specification Compliance
 
-This implementation follows the IETF draft specification for Token Status Lists, including:
+This implementation follows the IETF draft-ietf-oauth-status-list-13 specification for Token Status Lists, including:
 
 - Bit-size restrictions (1, 2, 4, or 8 bits per status)
 - ZLIB compression with DEFLATE
-- Standard status type values
-- JSON serialization format
+- Standard status type values (0x00, 0x01, 0x02)
+- Application-specific status type values (0x03, 0x0B-0x0F)
+- JSON serialization format with base64url encoding
 - CBOR serialization format
 
 
