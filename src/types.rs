@@ -182,12 +182,30 @@ mod tests {
     #[test]
     fn test_application_specific_status_types() {
         // Test all application-specific status types as per draft-13
-        assert_eq!(StatusType::try_from(0x03).unwrap(), StatusType::ApplicationSpecific3);
-        assert_eq!(StatusType::try_from(0x0B).unwrap(), StatusType::ApplicationSpecific11);
-        assert_eq!(StatusType::try_from(0x0C).unwrap(), StatusType::ApplicationSpecific12);
-        assert_eq!(StatusType::try_from(0x0D).unwrap(), StatusType::ApplicationSpecific13);
-        assert_eq!(StatusType::try_from(0x0E).unwrap(), StatusType::ApplicationSpecific14);
-        assert_eq!(StatusType::try_from(0x0F).unwrap(), StatusType::ApplicationSpecific15);
+        assert_eq!(
+            StatusType::try_from(0x03).unwrap(),
+            StatusType::ApplicationSpecific3
+        );
+        assert_eq!(
+            StatusType::try_from(0x0B).unwrap(),
+            StatusType::ApplicationSpecific11
+        );
+        assert_eq!(
+            StatusType::try_from(0x0C).unwrap(),
+            StatusType::ApplicationSpecific12
+        );
+        assert_eq!(
+            StatusType::try_from(0x0D).unwrap(),
+            StatusType::ApplicationSpecific13
+        );
+        assert_eq!(
+            StatusType::try_from(0x0E).unwrap(),
+            StatusType::ApplicationSpecific14
+        );
+        assert_eq!(
+            StatusType::try_from(0x0F).unwrap(),
+            StatusType::ApplicationSpecific15
+        );
     }
 
     #[test]
