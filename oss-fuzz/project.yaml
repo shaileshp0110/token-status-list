@@ -1,0 +1,19 @@
+# project.yaml for OSS-Fuzz
+# This file should be placed in google/oss-fuzz/projects/vc-status-list/
+# Reference: https://google.github.io/oss-fuzz/getting-started/new-project-guide/rust-lang/
+
+language: rust
+
+sanitizers:
+  - address
+
+fuzzing_engines:
+  - libfuzzer
+
+homepage: "https://github.com/shaileshp0110/token-status-list"
+primary_contact: "shaileshp@gmail.com"
+main_repo: "https://github.com/shaileshp0110/token-status-list.git"
+file_github_issue: true
+auto_ccs:
+  - "shaileshp0110"
+

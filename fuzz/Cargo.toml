@@ -1,0 +1,30 @@
+[package]
+name = "vc-status-list-fuzz"
+version = "0.0.0"
+authors = ["AutoFuzz <afl-users@googlegroups.com>"]
+edition = "2021"
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+vc-status-list = { path = ".." }
+libfuzzer-sys = "0.4"
+base64url = "0.1.0"
+
+[[bin]]
+name = "encoder"
+path = "fuzz_targets/encoder.rs"
+
+[[bin]]
+name = "decoder"
+path = "fuzz_targets/decoder.rs"
+
+[[bin]]
+name = "builder"
+path = "fuzz_targets/builder.rs"
+
+[[bin]]
+name = "serialization"
+path = "fuzz_targets/serialization.rs"
+
