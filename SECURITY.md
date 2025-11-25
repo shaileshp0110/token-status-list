@@ -1,21 +1,23 @@
 # Security Policy
 
-## Supported Versions
-
-Use this section to tell people about which versions of your project are
-currently being supported with security updates.
-
-| Version | Supported          |
-| ------- | ------------------ |
-| 5.1.x   | :white_check_mark: |
-| 5.0.x   | :x:                |
-| 4.0.x   | :white_check_mark: |
-| < 4.0   | :x:                |
-
 ## Reporting a Vulnerability
 
-Use this section to tell people how to report a vulnerability.
+**Please do not open public issues for security vulnerabilities.**
 
-Tell them where to go, how often they can expect to get an update on a
-reported vulnerability, what to expect if the vulnerability is accepted or
-declined, etc.
+Report security issues via:
+- **GitHub Security Advisory**: [Report a vulnerability](https://github.com/shaileshp0110/token-status-list/security/advisories/new)
+- **Email**: [your-email@example.com]
+
+You can expect:
+- Initial response within 48 hours
+- Regular updates every week
+- Resolution coordinated with you
+
+## Supported Versions
+
+Currently in early development. Security patches will be backported to recent versions only.
+
+| Version | Supported |
+| ------- | --------- |
+| 0.1.x   | ✅        |
+| < 0.1   | ❌        |
