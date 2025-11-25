@@ -27,7 +27,7 @@ jobs:
           components: rustfmt, clippy
 
       - name: Rust Cache
-        uses: Swatinem/rust-cache@98c8021b550208e191a6a3145459bfc9fb29c4c0 # v2.8.0
+        uses: Swatinem/rust-cache@f13886b937689c021905a6b90929199931d60db1 # v2.8.1
 
       - name: Check formatting
         run: cargo fmt --all -- --check
@@ -62,7 +62,7 @@ jobs:
           components: llvm-tools-preview
 
       - name: Rust Cache
-        uses: Swatinem/rust-cache@98c8021b550208e191a6a3145459bfc9fb29c4c0 # v2.8.0
+        uses: Swatinem/rust-cache@f13886b937689c021905a6b90929199931d60db1 # v2.8.1
 
       - name: Install cargo-llvm-cov
         uses: taiki-e/install-action@4680d769519cfaae25fb00a6220660a85b9acdd4 # cargo-llvm-cov
